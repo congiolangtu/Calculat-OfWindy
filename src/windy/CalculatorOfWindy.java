@@ -2,12 +2,16 @@ package windy;
 
 
 import javax.swing.Box;
+import javax.swing.ButtonGroup;
 import javax.swing.JButton;
 import javax.swing.JCheckBoxMenuItem;
+import javax.swing.JColorChooser;
 import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
+import javax.swing.JPopupMenu;
+import javax.swing.JRadioButtonMenuItem;
 import javax.swing.JSlider;
 import javax.swing.JTextArea;
 import javax.swing.KeyStroke;
@@ -17,58 +21,82 @@ import javax.swing.event.ChangeListener;
 
 import java.awt.Color;
 import java.awt.ComponentOrientation;
+import java.awt.Container;
 import java.awt.Event;
 import java.awt.Font;
+import java.awt.Graphics;
 import java.awt.Toolkit;
 import java.awt.event.*;
 
+/**
+ * Chương trình calculator
+ * @author Windy
+ *
+ */
 public class CalculatorOfWindy extends JFrame implements ActionListener {
 	
-	//Mảng chứa 22 nút chức năng
+	/**
+	 * Mảng chứa 22 nút chức năng
+	 */
 	JButton[] button = new JButton[22];
-	//Nút đặc biệt thay đổi kích thước
+	/**Nút đặc biệt thay đổi kích thước*/
 	JButton buttonSpecial;
-	//tối giản và tắt chương trình
+	/**tối giản và tắt chương trình*/
 	JButton min,close;
-	//Mảng chứa các kí tự của nút
+	/**Mảng chứa các kí tự của nút*/
 	String[] buttonString = {"M+", "M", "←", "C",
 							 "√", "e", "+", "-",
 							 "7", "8", "9", "×",
 							 "4", "5", "6", "÷",
 	 	   					 "1", "2", "3",
 		 					 "0", ".", "="};
-	//2 màn hình text hiện phép tình và kết quả
+	/**2 màn hình text hiện phép tình và kết quả*/
     JTextArea display1 = new JTextArea(1,20);
     JTextArea display2 = new JTextArea(1,20);
-    //Thanh menubar
+    /**Thanh menu chuột phải.*/
+    JPopupMenu popup= new JPopupMenu();
+    JPopupMenu popupText= new JPopupMenu();
+    /**Thanh menubar*/
     JMenuBar menu= new JMenuBar();
-    //Các menu trong menuBar
+    /**Các menu trong menuBar*/
     JMenu menuFile,menuOption,menuView,menuHelp,menuTransparent;
-    //check alwayTop
+    /**check alwayTop*/
     JCheckBoxMenuItem menuAlwayTop;
-    //menu exit
+    /**menu exit*/
     JMenuItem menuExit;
-    //thanh kéo trong suốt
+    /**thanh kéo trong suốt*/
     JSlider Transparent;
-    //font chữ
+    /**font chữ*/
     Font font = new Font("Times new Roman", Font.ITALIC, 22);
-    //biến đếm.
+    /**biến đếm.*/
     int i=0;
-    //Kiểm tra có lỗi không.
+    /**Kiểm tra có lỗi không.*/
     boolean checkError=false;
-    //Kiểm tra xem đã ấn dấu bằng chưa.
+    /**Kiểm tra xem đã ấn dấu bằng chưa.*/
     boolean checkResual=false;
-    //Kiểm tra xem có được ấn dấu . tiếp không
+    /**Kiểm tra xem có được ấn dấu . tiếp không*/
     boolean checkDots=false;
-    //Biến M lưu kết quả phép tính.
+    /**Kiểm tra xem có ở chế độ đặc biệt không.*/
+    boolean checkMode=false;
+    /**Biến M lưu kết quả phép tính.*/
     double M;
-    //Biến lưu kết quả.
+    /**Biến lưu kết quả.*/
     double temporary1=0;
+    /**check xem đang ở chế đố rút gọn hay không.*/
+    boolean special=false;
+    /**Lấy ra container của jframe*/
+    Container container;
+    /**chứa màu cần thay đổi.*/
+    Color colorI;
 
 	int pX,pY;
+	
     
-	//Khởi tạo chương trình.
+	/**
+	 * Khởi tạo chương trình.
+	 */
     CalculatorOfWindy(){
+    	setName("Calculator Of Windy");
     	setDesign();
     	//Kích thước chương trình
     	setSize(300,400);
@@ -85,8 +113,11 @@ public class CalculatorOfWindy extends JFrame implements ActionListener {
     	//bỏ viền window
     	setUndecorated(true);
     	//set trong suốt
-    	setOpacity(0.7f);   	
+    	setOpacity(0.7f);
     	
+    	container=this.getContentPane();
+    	Graphics g=this.getGraphics();
+  
     	//tạo các button và set thông số
     	//vị trí, tên
     	for(int i=0;i<22;i++){
@@ -94,6 +125,7 @@ public class CalculatorOfWindy extends JFrame implements ActionListener {
     		button[i].setText(buttonString[i]);
     		button[i].setFont(font);
     		button[i].addActionListener(this);
+            button[i].setFocusable(false);
     	}
     	for(int i=0;i<4;i++){
     		button[i].setSize(64, 32);
@@ -137,24 +169,171 @@ public class CalculatorOfWindy extends JFrame implements ActionListener {
     		
     	//Set các màn hình;
     	display1.setFont(font);
-    	display1.setEditable(true);
+    	display1.setEditable(false);
+    	display1.setFocusable(false);
     	display1.setComponentOrientation(ComponentOrientation.LEFT_TO_RIGHT);
     	display1.setSize(280, 30);
     	display1.setLocation(10, 20);
     	add(display1);
     	display2.setFont(font);
     	display2.setEditable(false);
+    	display2.setFocusable(false);
     	display2.setComponentOrientation(ComponentOrientation.RIGHT_TO_LEFT);
     	display2.setSize(280, 30);
     	display2.setLocation(10, 50);
     	add(display2);
-    	
+    	//cho jframe nhận sự kiện bàn phím
+    	this.setFocusable(true);
+    	this.addKeyListener(new KeyAdapter(){
+            public void keyPressed(KeyEvent me)
+            {
+               int a=me.getKeyCode();
+               if(a>95&&a<106)
+            	   setDisplay1(""+String.valueOf(a-96));
+               else if(a==110)
+            	   setDisplay1Spec3();
+               else if(a==106)
+            	   setDisplay1Spec1("×");
+               else if(a==111)
+            	   setDisplay1Spec1("÷");
+               else if(a==107){
+            	   setDisplay1("+");
+            	   checkDots=false;
+               }
+               else if(a==109){
+            	   setDisplay1("-");
+            	   checkDots=false;
+               }
+               else if(a==8){
+               	int d=display1.getText().length();
+               	if(d>0)
+               	display1.replaceRange("", d-1, d);
+               }
+               else if(a==10){
+            	result();
+               	checkResual=true;
+               }
+            }
+        });
     	//set button thay doi kich thuoc
     	buttonSpecial = new JButton();
     	buttonSpecial.addActionListener(this);
     	buttonSpecial.setSize(64, 10);
     	buttonSpecial.setLocation(118, 85);
+    	buttonSpecial.setFocusable(false);
+    	buttonSpecial.addActionListener(new ActionListener(){
+            public void actionPerformed(ActionEvent ae)
+            {
+            	if(checkMode){
+            		setSize(300,400);
+            		for(int i=0;i<22;i++){
+                    	button[i].show();
+                    }
+            	}
+            	else{
+            		setSize(300,140);
+            		for(int i=0;i<22;i++){
+            			button[i].hide();
+            		}
+            	}
+            	checkMode=!checkMode;
+            }
+        });
     	add(buttonSpecial);
+    	
+    	//Popup Menu
+    	JMenuItem colorBackground=new JMenuItem("Color Background");
+    	colorBackground.addActionListener(new ActionListener(){
+    		public void actionPerformed(ActionEvent e){
+    			colorI=JColorChooser.showDialog(CalculatorOfWindy.this,"Choose a color",colorI);
+    			if(colorI==null)
+    				colorI=Color.lightGray;
+    			container.setBackground(colorI);
+    			menu.setBackground(colorI);
+    			}
+    	});
+    	JMenuItem colorButton=new JMenuItem("Color Button");
+    	colorButton.addActionListener(new ActionListener(){
+    		public void actionPerformed(ActionEvent e){
+    			colorI=JColorChooser.showDialog(CalculatorOfWindy.this,"Choose a color",colorI);
+    			if(colorI==null)
+    				colorI=Color.lightGray;
+    			for(int i=0; i<22;i++)
+    				button[i].setBackground(colorI);
+    			}
+    	});
+    	JMenuItem colorDisplay=new JMenuItem("Color Display");
+    	colorDisplay.addActionListener(new ActionListener(){
+    		public void actionPerformed(ActionEvent e){
+    			colorI=JColorChooser.showDialog(CalculatorOfWindy.this,"Choose a color",colorI);
+    			if(colorI==null)
+    				colorI=Color.lightGray;
+    			display1.setBackground(colorI);
+    			display2.setBackground(colorI);
+    			}
+    	});
+    	popup.add(colorBackground);
+    	popup.add(colorButton);
+    	popup.add(colorDisplay);
+    	addMouseListener(new MouseAdapter(){
+    		public void mousePressed(MouseEvent e){
+    			checkForTriggerEvent(e);
+    		}
+    		public void mouseReleased(MouseEvent e){
+    			checkForTriggerEvent(e);
+    		}
+    		public void checkForTriggerEvent(MouseEvent e){
+    			if(e.isPopupTrigger()){
+    				popup.show(e.getComponent(), e.getX(), e.getY());
+    			}
+    		}
+    	});
+    	
+    	//pupup Text
+    	JRadioButtonMenuItem leftleft=new JRadioButtonMenuItem("Left - Left");
+    	leftleft.addActionListener(new ActionListener(){
+    		public void actionPerformed(ActionEvent e){
+    	    	display1.setComponentOrientation(ComponentOrientation.LEFT_TO_RIGHT);
+    	    	display2.setComponentOrientation(ComponentOrientation.LEFT_TO_RIGHT);  
+    	    	
+    		}
+    	});
+    	JRadioButtonMenuItem rightright=new JRadioButtonMenuItem("Right - Right");
+    	rightright.addActionListener(new ActionListener(){
+    		public void actionPerformed(ActionEvent e){
+    	    	display1.setComponentOrientation(ComponentOrientation.RIGHT_TO_LEFT);
+    	    	display2.setComponentOrientation(ComponentOrientation.RIGHT_TO_LEFT);  	
+    	    	
+    		}
+    	});
+    	JRadioButtonMenuItem leftright=new JRadioButtonMenuItem("Left - Right");
+    	leftright.addActionListener(new ActionListener(){
+    		public void actionPerformed(ActionEvent e){
+    	    	display1.setComponentOrientation(ComponentOrientation.LEFT_TO_RIGHT);
+    	    	display2.setComponentOrientation(ComponentOrientation.RIGHT_TO_LEFT);  	
+    	    	
+    		}
+    	});
+    	leftright.setSelected(true);
+    	JRadioButtonMenuItem rightleft=new JRadioButtonMenuItem("Right - Left");
+    	rightleft.addActionListener(new ActionListener(){
+    		public void actionPerformed(ActionEvent e){
+    	    	display1.setComponentOrientation(ComponentOrientation.RIGHT_TO_LEFT);
+    	    	display2.setComponentOrientation(ComponentOrientation.LEFT_TO_RIGHT);  			
+    	    	
+    		}
+    	});
+    	ButtonGroup textGroup=new ButtonGroup();
+    	textGroup.add(leftleft);
+    	textGroup.add(rightright);
+    	textGroup.add(leftright);
+    	textGroup.add(rightleft);
+    	popupText.add(leftleft);
+    	popupText.add(rightright);
+    	popupText.add(leftright);
+    	popupText.add(rightleft);
+    	display1.setComponentPopupMenu(popupText);
+    	display2.setComponentPopupMenu(popupText);
     	
     	 //Menu File
     	menuExit=new JMenuItem("Exit");
@@ -194,7 +373,8 @@ public class CalculatorOfWindy extends JFrame implements ActionListener {
             }
         });
     	
-    	//Menu Edit
+    	//Menu option
+        //box check alway top
     	menuAlwayTop=new JCheckBoxMenuItem("Always on top");
     	menuAlwayTop.setSelected(true);
     	menuAlwayTop.addActionListener(new ActionListener(){
@@ -203,30 +383,47 @@ public class CalculatorOfWindy extends JFrame implements ActionListener {
     			else setAlwaysOnTop(false);
     		}
     	});
+    	//slider kéo trong suốt
     	Transparent=new JSlider();
-    	Transparent.setMajorTickSpacing(100);
-    	Transparent.setMinorTickSpacing(30);
+    	Transparent.setMinimum(30);
     	Transparent.setValue(70);
     	Transparent.addChangeListener(new ChangeListener(){
     		 public void stateChanged(ChangeEvent changeEvent) {
     			setOpacity((float)Transparent.getValue()/100);
     		} 		
     	});
+    	//menu ấn để ra slide kéo
     	menuTransparent=new JMenu("Transparent");
     	menuTransparent.add(Transparent);
+    	//menu Color
+    	JMenu menuColor =new JMenu("Color");
+    	menuColor.add(colorBackground);
+    	menuColor.add(colorButton);
+    	menuColor.add(colorDisplay);
+    	//menu TextMode
+    	JMenu menuText = new JMenu("Text Mode");
+    	menuText.add(leftleft);
+    	menuText.add(rightright);
+    	menuText.add(leftright);
+    	menuText.add(rightleft);
+    	//Menubar option
     	menuOption=new JMenu("Option");
     	menuOption.setMnemonic(KeyEvent.VK_O);
     	menuOption.add(menuAlwayTop);
     	menuOption.add(menuTransparent);
+    	menuOption.add(menuColor);
+    	menuOption.add(menuText);
     	menu.add(menuOption);
     	
-    	
+    	//nút tiêu giảm và tắt
     	min=new JButton("_");
+    	min.setFocusable(false);
         close=new JButton("x");
+        close.setFocusable(false);
         min.setFocusPainted(false);
         close.setFocusPainted(false);
         close.setBackground(Color.RED);
-        
+        // sự kiện tiêu giảm
         min.addActionListener(new ActionListener(){
             public void actionPerformed(ActionEvent ae)
             {
@@ -234,7 +431,7 @@ public class CalculatorOfWindy extends JFrame implements ActionListener {
                 setState(ICONIFIED);
             }
         });
-        
+        //sự kiện thoát chương trình
         close.addActionListener(new ActionListener(){
             public void actionPerformed(ActionEvent ae)
             {
@@ -259,7 +456,9 @@ public class CalculatorOfWindy extends JFrame implements ActionListener {
 
     
 	
-	
+	/**
+	 * Sử lí các sự kiện khi nhấn vào các button
+	 */
 	@Override
 	public void actionPerformed(ActionEvent event) {
 		// TODO Auto-generated method stub
@@ -302,7 +501,6 @@ public class CalculatorOfWindy extends JFrame implements ActionListener {
         	setDisplay1("9");
         if(event.getSource() == button[11]){
         	setDisplay1Spec1("×");
-        	checkDots=false;
         }
         if(event.getSource() == button[12])
         	setDisplay1("4");
@@ -312,7 +510,6 @@ public class CalculatorOfWindy extends JFrame implements ActionListener {
         	setDisplay1("6");
         if(event.getSource() == button[15]){
         	setDisplay1Spec1("÷");
-        	checkDots=false;
         }
         if(event.getSource() == button[16])
         	setDisplay1("1");
@@ -323,23 +520,7 @@ public class CalculatorOfWindy extends JFrame implements ActionListener {
         if(event.getSource() == button[19])
         	setDisplay1("0");
         if(event.getSource() == button[20]){
-        	if(checkResual==true){
-    			display1.setText("");
-    			checkResual=false;checkDots=false;
-    		}
-        	String in=display1.getText();
-        	if(checkDots==true);
-        	else if(in.length()==0){
-        		display1.append(".");
-        		checkDots=true;
-        	}
-        	else{
-        		char c=in.charAt(in.length()-1);
-        		if(c!='.'){
-        			display1.append(".");
-        			checkDots=true;
-        		}
-        	}
+        	setDisplay1Spec3();
         }
         if(event.getSource() == button[21]){
         	result();
@@ -347,6 +528,10 @@ public class CalculatorOfWindy extends JFrame implements ActionListener {
         }
 	}
 	
+	/**
+	 * sử lý set màn hình phép tính khi nhấn vào các số
+	 * @param c
+	 */
 	void setDisplay1(String c){
 		if(checkResual==true){
 			display1.setText("");
@@ -354,7 +539,13 @@ public class CalculatorOfWindy extends JFrame implements ActionListener {
 		}
 		display1.append(c);
 	}
+	
+	/**
+	 * sử lý set màn hình phép tính khi nhấn các nút phép tính
+	 * @param c
+	 */
 	void setDisplay1Spec1(String c){
+    	checkDots=false;
 		String in=display1.getText();
 		if(in.length()==0)return;
 		else if(!Character.isDigit(in.charAt(in.length()-1)))return;
@@ -365,6 +556,11 @@ public class CalculatorOfWindy extends JFrame implements ActionListener {
 		}
 		display1.append(c);
 	}
+	
+	/**
+	 * sử lí sự kiện set màn hình phép tính khi ấn các nút phụ
+	 * @param a
+	 */
 	void setDisplay1Spec2(String a){
     	if(checkResual==true){
 			display1.setText("");
@@ -380,35 +576,64 @@ public class CalculatorOfWindy extends JFrame implements ActionListener {
     }
 	
 	/**
+	 * set man hinh khi an nut "."
+	 */
+	void setDisplay1Spec3(){
+		if(checkResual==true){
+			display1.setText("");
+			checkResual=false;checkDots=false;
+		}
+    	String in=display1.getText();
+    	if(checkDots==true);
+    	else if(in.length()==0){
+    		display1.append(".");
+    		checkDots=true;
+    	}
+    	else{
+    		char c=in.charAt(in.length()-1);
+    		if(c!='.'){
+    			display1.append(".");
+    			checkDots=true;
+    		}
+    	}
+	}
+	
+	/**
 	 * Trả về kết quả khi ấn dấu =
 	 */
 	public void result(){
 		String in=display1.getText();
+		if(in.isEmpty())return;
 		i=0;
+		//biến để kiểm tra kí tự
 		char c;
+		//kết quả
 		temporary1=0;
+		//kiểm tra xem có lỗi ko
 		checkError=false;
+		//gán kết quả bằng số đầu tiên
 		temporary1=getNumbers(in);
+		//chạy hết chiều dài phép tính
 		while(i<in.length()){
 			c=in.charAt(i);
+			//phép trừ
 			if(c=='-'){i++;
 				temporary1-=getNumbers(in);
 				
 			}
+			//phép cộng
 			else if(c=='+'){i++;
 				temporary1+=getNumbers(in);
 				
 			}
 		}
+		//nếu lỗi in ra lỗi
 		if(checkError==true){
 			display2.setText("ERROR");
 			temporary1=0;
 			return;
 		}
-		if(temporary1>=0)
 			display2.setText(Double.toString(temporary1));
-		else
-			display2.setText(Double.toString(-temporary1)+"-");
 	}
 	
 	/**
@@ -434,18 +659,21 @@ public class CalculatorOfWindy extends JFrame implements ActionListener {
 		return tem1;
 	}
 	/**
-	 * Trả về 1 số, tính luôn căn nếu có.
+	 * Trả về 1 số tiếp theo trong dãy số, tính luôn căn nếu có.
 	 * @param in
 	 * @return
 	 */
 	public double getNumber(String in){
+		//xác định vị trí đầu của dãy số
 		int j=i;
 		//Kiểm tra có căn không
 		boolean sqrt=false;
 		//Kiểm tra âm hay dương, dương là 1,âm là -1
 		int sign=1;
 		char c=in.charAt(i);
+		//bắt lỗi phép tính
 		try{
+			//sử lí 1 loạt các phép cộng trừ
 		while(c=='+'||c=='-'){
 			if(c=='+'){i++;c=in.charAt(i);}
 			else{
@@ -453,7 +681,9 @@ public class CalculatorOfWindy extends JFrame implements ActionListener {
 			}
 			j++;
 		}
+		//sử lí căn
 		if(c=='√'){sqrt=true;i++;c=in.charAt(i);}
+		//sử lí 1 loạt phép cộng trừ sau dấu căn
 		while(c=='+'||c=='-'){
 				if(c=='+'){i++;c=in.charAt(i);}
 				else{
@@ -461,6 +691,7 @@ public class CalculatorOfWindy extends JFrame implements ActionListener {
 				}
 				j++;
 			}
+		//trả về vị trí kết thúc của số
 		while(c>45&&c<58){
 			i++;
 			if(i==in.length())break;
@@ -469,7 +700,9 @@ public class CalculatorOfWindy extends JFrame implements ActionListener {
 		}catch(ArrayIndexOutOfBoundsException e) {
 			checkError=true;
         }
+		//nếu ko có sô thì trả về 0
 		if(i==j)return 0;
+		//tính căn
 		if(sqrt==true){
 			try{
 				double result=sign*Double.parseDouble(in.substring(j+1, i));
@@ -493,9 +726,9 @@ public class CalculatorOfWindy extends JFrame implements ActionListener {
 	
     public static void main(String[] arguments) {
     				CalculatorOfWindy c = new CalculatorOfWindy();
-    		
         
     }
+
 	
 
 }
