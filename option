@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<option>
+<background>1</background>
+<modeSpecial>false</modeSpecial>
+<colorBackground>-1118482</colorBackground>
+<colorButton>-2696737</colorButton>
+<colorDisplay>-1</colorDisplay>
+<colorText>-13421773</colorText>
+<modeTextDisplay1>1</modeTextDisplay1>
+<modeTextDisplay2>1</modeTextDisplay2>
+<alwayOnTop>true</alwayOnTop>
+<autoCopy>false</autoCopy>
+<Transparent>70</Transparent>
+<positionX>1061</positionX>
+<positionY>50</positionY>
+</option>
